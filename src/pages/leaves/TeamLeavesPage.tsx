@@ -1,38 +1,65 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getTeamLeaveRequests, updateLeaveRequestStatus } from '../../services/leaveRequestService';
-import { LeaveRequest, UpdateLeaveRequestStatusData } from '../../types';
-import Card from '../../components/ui/Card';
-import Badge from '../../components/ui/Badge';
-import Button from '../../components/ui/Button';
-import Alert from '../../components/ui/Alert';
-import Textarea from '../../components/ui/Textarea';
-import { formatDate } from '../../utils/dateUtils';
-import { getErrorMessage } from '../../utils/errorUtils';
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getTeamLeaveRequests,
+  updateLeaveRequestStatus,
+} from "../../services/leaveRequestService";
+import { LeaveRequest, UpdateLeaveRequestStatusData } from "../../types";
+import Card from "../../components/ui/Card";
+import Badge from "../../components/ui/Badge";
+import Button from "../../components/ui/Button";
+import Alert from "../../components/ui/Alert";
+import Textarea from "../../components/ui/Textarea";
+import { formatDate } from "../../utils/dateUtils";
+import { getErrorMessage } from "../../utils/errorUtils";
+import { useAuth } from "../../context/AuthContext";
 
 const TeamLeavesPage: React.FC = () => {
+  const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [selectedStatus, setSelectedStatus] = useState<string>('pending');
-  const [comments, setComments] = useState<string>('');
+  const [selectedYear, setSelectedYear] = useState<number>(
+    new Date().getFullYear()
+  );
+  const [selectedStatus, setSelectedStatus] = useState<string>("pending");
+  const [comments, setComments] = useState<string>("");
   const [actionLeaveId, setActionLeaveId] = useState<string | null>(null);
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
 
+  // Determine user role for approval level
+  const userRole = user?.role || "";
+  const isTeamLead = userRole === "team_lead";
+  const isManager = userRole === "manager";
+  const isHR = userRole === "hr";
+  const isSuperAdmin = userRole === "super_admin";
+
+  // Determine approval level based on role
+  const getApprovalLevel = () => {
+    if (isTeamLead) return "L1";
+    if (isManager) return "L2";
+    if (isHR) return "L3";
+    if (isSuperAdmin) return "L4";
+    return "";
+  };
+
   // Fetch team leave requests
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['teamLeaveRequests', selectedYear, selectedStatus],
-    queryFn: () => getTeamLeaveRequests({
-      year: selectedYear,
-      status: selectedStatus !== 'all' ? selectedStatus as any : undefined,
-    }),
+    queryKey: ["teamLeaveRequests", selectedYear, selectedStatus],
+    queryFn: () =>
+      getTeamLeaveRequests({
+        year: selectedYear,
+        status: selectedStatus !== "all" ? (selectedStatus as any) : undefined,
+      }),
     onError: (err: any) => setError(getErrorMessage(err)),
   });
 
   // Handle approve/reject leave request
-  const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected') => {
-    if (status === 'approved') {
+  const handleUpdateStatus = async (
+    id: string,
+    status: "approved" | "rejected"
+  ) => {
+    if (status === "approved") {
       setIsApproving(true);
     } else {
       setIsRejecting(true);
@@ -43,11 +70,11 @@ const TeamLeavesPage: React.FC = () => {
         status,
         comments: comments.trim() || undefined,
       };
-      
+
       await updateLeaveRequestStatus(id, data);
       setSuccessMessage(`Leave request ${status} successfully`);
       setActionLeaveId(null);
-      setComments('');
+      setComments("");
       refetch();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -60,13 +87,13 @@ const TeamLeavesPage: React.FC = () => {
   // Helper function to render leave status badge
   const renderStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return <Badge variant="warning">Pending</Badge>;
-      case 'approved':
+      case "approved":
         return <Badge variant="success">Approved</Badge>;
-      case 'rejected':
+      case "rejected":
         return <Badge variant="danger">Rejected</Badge>;
-      case 'cancelled':
+      case "cancelled":
         return <Badge variant="default">Cancelled</Badge>;
       default:
         return <Badge>{status}</Badge>;
@@ -79,22 +106,29 @@ const TeamLeavesPage: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-gray-900 mb-6">Team Leave Requests</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Team Leave Requests
+        </h1>
+        <Badge variant="primary" className="text-sm">
+          Approval Level: {getApprovalLevel()}
+        </Badge>
+      </div>
 
       {error && (
-        <Alert 
-          variant="error" 
-          message={error} 
-          onClose={() => setError(null)} 
+        <Alert
+          variant="error"
+          message={error}
+          onClose={() => setError(null)}
           className="mb-6"
         />
       )}
 
       {successMessage && (
-        <Alert 
-          variant="success" 
-          message={successMessage} 
-          onClose={() => setSuccessMessage(null)} 
+        <Alert
+          variant="success"
+          message={successMessage}
+          onClose={() => setSuccessMessage(null)}
           className="mb-6"
         />
       )}
@@ -102,7 +136,10 @@ const TeamLeavesPage: React.FC = () => {
       <Card className="mb-6">
         <div className="flex flex-wrap gap-4">
           <div className="w-full sm:w-auto">
-            <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="year"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Year
             </label>
             <select
@@ -119,7 +156,10 @@ const TeamLeavesPage: React.FC = () => {
             </select>
           </div>
           <div className="w-full sm:w-auto">
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="status"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Status
             </label>
             <select
@@ -153,24 +193,30 @@ const TeamLeavesPage: React.FC = () => {
                       {request.user?.firstName} {request.user?.lastName}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      <span className="font-medium">Leave Type:</span> {request.leaveType?.name}
+                      <span className="font-medium">Leave Type:</span>{" "}
+                      {request.leaveType?.name}
                     </p>
                     <p className="text-sm text-gray-500">
-                      <span className="font-medium">Duration:</span> {formatDate(request.startDate)} - {formatDate(request.endDate)} ({request.numberOfDays} day(s))
+                      <span className="font-medium">Duration:</span>{" "}
+                      {formatDate(request.startDate)} -{" "}
+                      {formatDate(request.endDate)} ({request.numberOfDays}{" "}
+                      day(s))
                     </p>
                     <p className="text-sm text-gray-500">
-                      <span className="font-medium">Type:</span> {request.requestType.replace('_', ' ')}
+                      <span className="font-medium">Type:</span>{" "}
+                      {request.requestType.replace("_", " ")}
                     </p>
                     {request.reason && (
                       <p className="text-sm text-gray-500">
-                        <span className="font-medium">Reason:</span> {request.reason}
+                        <span className="font-medium">Reason:</span>{" "}
+                        {request.reason}
                       </p>
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     {renderStatusBadge(request.status)}
-                    
-                    {request.status === 'pending' && (
+
+                    {request.status === "pending" && (
                       <div className="flex space-x-2">
                         {actionLeaveId !== request.id ? (
                           <>
@@ -188,7 +234,7 @@ const TeamLeavesPage: React.FC = () => {
                             size="sm"
                             onClick={() => {
                               setActionLeaveId(null);
-                              setComments('');
+                              setComments("");
                             }}
                           >
                             Cancel
@@ -213,7 +259,9 @@ const TeamLeavesPage: React.FC = () => {
                         variant="danger"
                         size="sm"
                         isLoading={isRejecting}
-                        onClick={() => handleUpdateStatus(request.id, 'rejected')}
+                        onClick={() =>
+                          handleUpdateStatus(request.id, "rejected")
+                        }
                       >
                         Reject
                       </Button>
@@ -221,7 +269,9 @@ const TeamLeavesPage: React.FC = () => {
                         variant="success"
                         size="sm"
                         isLoading={isApproving}
-                        onClick={() => handleUpdateStatus(request.id, 'approved')}
+                        onClick={() =>
+                          handleUpdateStatus(request.id, "approved")
+                        }
                       >
                         Approve
                       </Button>

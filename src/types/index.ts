@@ -1,4 +1,11 @@
 // User Types
+export enum UserRole {
+  SUPER_ADMIN = "super_admin",
+  MANAGER = "manager",
+  HR = "hr",
+  EMPLOYEE = "employee",
+}
+
 export interface User {
   id: string;
   firstName: string;
@@ -6,9 +13,9 @@ export interface User {
   email: string;
   phoneNumber?: string;
   address?: string;
-  role: 'employee' | 'manager' | 'admin' | 'hr';
+  role: "super_admin" | "employee" | "manager" | "admin" | "hr";
   level: number;
-  gender?: 'male' | 'female' | 'other';
+  gender?: "male" | "female" | "other";
   isActive: boolean;
   managerId?: string;
   department?: string;
@@ -22,7 +29,7 @@ export interface AuthUser {
   firstName: string;
   lastName: string;
   email: string;
-  role: 'employee' | 'manager' | 'admin' | 'hr';
+  role: "super_admin" | "employee" | "manager" | "admin" | "hr";
   level: number;
 }
 
@@ -38,7 +45,7 @@ export interface RegisterData {
   password: string;
   phoneNumber?: string;
   address?: string;
-  gender?: 'male' | 'female' | 'other';
+  gender?: "male" | "female" | "other";
 }
 
 export interface UpdateProfileData {
@@ -62,7 +69,7 @@ export interface LeaveType {
   isCarryForward: boolean;
   maxCarryForwardDays?: number;
   isActive: boolean;
-  applicableGender?: 'male' | 'female' | null;
+  applicableGender?: "male" | "female" | null;
   isHalfDayAllowed: boolean;
   isPaidLeave: boolean;
   createdAt?: string;
@@ -76,7 +83,7 @@ export interface CreateLeaveTypeData {
   isCarryForward: boolean;
   maxCarryForwardDays?: number;
   isActive: boolean;
-  applicableGender?: 'male' | 'female' | null;
+  applicableGender?: "male" | "female" | null;
   isHalfDayAllowed: boolean;
   isPaidLeave: boolean;
 }
@@ -88,10 +95,10 @@ export interface LeaveRequest {
   leaveTypeId: string;
   startDate: string;
   endDate: string;
-  requestType: 'full_day' | 'half_day_morning' | 'half_day_afternoon';
+  requestType: "full_day" | "half_day_morning" | "half_day_afternoon";
   numberOfDays: number;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  status: "pending" | "approved" | "rejected" | "cancelled";
   approverId?: string;
   approverComments?: string;
   approvedAt?: string;
@@ -112,12 +119,12 @@ export interface CreateLeaveRequestData {
   leaveTypeId: string;
   startDate: string;
   endDate: string;
-  requestType: 'full_day' | 'half_day_morning' | 'half_day_afternoon';
+  requestType: "full_day" | "half_day_morning" | "half_day_afternoon";
   reason: string;
 }
 
 export interface UpdateLeaveRequestStatusData {
-  status: 'approved' | 'rejected';
+  status: "approved" | "rejected";
   comments?: string;
 }
 

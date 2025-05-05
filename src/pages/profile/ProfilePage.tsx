@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useAuth } from '../../context/AuthContext';
-import { UpdateProfileData, ChangePasswordData } from '../../types';
-import { changePassword } from '../../services/authService';
-import Card from '../../components/ui/Card';
-import Input from '../../components/ui/Input';
-import Button from '../../components/ui/Button';
-import Alert from '../../components/ui/Alert';
-import { getErrorMessage } from '../../utils/errorUtils';
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { useAuth } from "../../context/AuthContext";
+import { UpdateProfileData, ChangePasswordData } from "../../types";
+import { changePassword } from "../../services/authService";
+import Card from "../../components/ui/Card";
+import Input from "../../components/ui/Input";
+import Button from "../../components/ui/Button";
+import Alert from "../../components/ui/Alert";
+import { getErrorMessage } from "../../utils/errorUtils";
 
 const ProfilePage: React.FC = () => {
   const { userProfile, updateUserProfile, refreshProfile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
+  const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
@@ -20,29 +20,29 @@ const ProfilePage: React.FC = () => {
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
 
   // Profile form
-  const { 
-    register: registerProfile, 
-    handleSubmit: handleProfileSubmit, 
-    formState: { errors: profileErrors } 
+  const {
+    register: registerProfile,
+    handleSubmit: handleProfileSubmit,
+    formState: { errors: profileErrors },
   } = useForm<UpdateProfileData>({
     defaultValues: {
-      firstName: userProfile?.firstName || '',
-      lastName: userProfile?.lastName || '',
-      phoneNumber: userProfile?.phoneNumber || '',
-      address: userProfile?.address || '',
+      firstName: userProfile?.firstName || "",
+      lastName: userProfile?.lastName || "",
+      phoneNumber: userProfile?.phoneNumber || "",
+      address: userProfile?.address || "",
     },
   });
 
   // Password form
-  const { 
-    register: registerPassword, 
-    handleSubmit: handlePasswordSubmit, 
+  const {
+    register: registerPassword,
+    handleSubmit: handlePasswordSubmit,
     formState: { errors: passwordErrors },
     reset: resetPassword,
     watch,
   } = useForm<ChangePasswordData & { confirmPassword: string }>();
 
-  const newPassword = watch('newPassword');
+  const newPassword = watch("newPassword");
 
   // Handle profile update
   const onProfileSubmit = async (data: UpdateProfileData) => {
@@ -52,7 +52,7 @@ const ProfilePage: React.FC = () => {
 
     try {
       await updateUserProfile(data);
-      setProfileSuccess('Profile updated successfully');
+      setProfileSuccess("Profile updated successfully");
       await refreshProfile();
     } catch (err) {
       setProfileError(getErrorMessage(err));
@@ -62,7 +62,9 @@ const ProfilePage: React.FC = () => {
   };
 
   // Handle password change
-  const onPasswordSubmit = async (data: ChangePasswordData & { confirmPassword: string }) => {
+  const onPasswordSubmit = async (
+    data: ChangePasswordData & { confirmPassword: string }
+  ) => {
     setIsPasswordLoading(true);
     setPasswordError(null);
     setPasswordSuccess(null);
@@ -70,7 +72,7 @@ const ProfilePage: React.FC = () => {
     try {
       const { confirmPassword, ...passwordData } = data;
       await changePassword(passwordData);
-      setPasswordSuccess('Password changed successfully');
+      setPasswordSuccess("Password changed successfully");
       resetPassword();
     } catch (err) {
       setPasswordError(getErrorMessage(err));
@@ -89,22 +91,26 @@ const ProfilePage: React.FC = () => {
             <button
               className={`
                 py-4 px-1 border-b-2 font-medium text-sm
-                ${activeTab === 'profile'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                ${
+                  activeTab === "profile"
+                    ? "border-primary-500 text-primary-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }
               `}
-              onClick={() => setActiveTab('profile')}
+              onClick={() => setActiveTab("profile")}
             >
               Profile Information
             </button>
             <button
               className={`
                 py-4 px-1 border-b-2 font-medium text-sm
-                ${activeTab === 'password'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                ${
+                  activeTab === "password"
+                    ? "border-primary-500 text-primary-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }
               `}
-              onClick={() => setActiveTab('password')}
+              onClick={() => setActiveTab("password")}
             >
               Change Password
             </button>
@@ -112,34 +118,39 @@ const ProfilePage: React.FC = () => {
         </div>
       </div>
 
-      {activeTab === 'profile' && (
+      {activeTab === "profile" && (
         <Card>
           {profileError && (
-            <Alert 
-              variant="error" 
-              message={profileError} 
-              onClose={() => setProfileError(null)} 
+            <Alert
+              variant="error"
+              message={profileError}
+              onClose={() => setProfileError(null)}
               className="mb-6"
             />
           )}
 
           {profileSuccess && (
-            <Alert 
-              variant="success" 
-              message={profileSuccess} 
-              onClose={() => setProfileSuccess(null)} 
+            <Alert
+              variant="success"
+              message={profileSuccess}
+              onClose={() => setProfileSuccess(null)}
               className="mb-6"
             />
           )}
 
-          <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-6">
+          <form
+            onSubmit={handleProfileSubmit(onProfileSubmit)}
+            className="space-y-6"
+          >
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div>
                 <Input
                   id="firstName"
                   label="First Name"
                   error={profileErrors.firstName?.message}
-                  {...registerProfile('firstName', { required: 'First name is required' })}
+                  {...registerProfile("firstName", {
+                    required: "First name is required",
+                  })}
                 />
               </div>
               <div>
@@ -147,7 +158,9 @@ const ProfilePage: React.FC = () => {
                   id="lastName"
                   label="Last Name"
                   error={profileErrors.lastName?.message}
-                  {...registerProfile('lastName', { required: 'Last name is required' })}
+                  {...registerProfile("lastName", {
+                    required: "Last name is required",
+                  })}
                 />
               </div>
             </div>
@@ -156,7 +169,7 @@ const ProfilePage: React.FC = () => {
               <Input
                 id="email"
                 label="Email Address"
-                value={userProfile?.email || ''}
+                value={userProfile?.email || ""}
                 disabled
                 readOnly
               />
@@ -170,10 +183,10 @@ const ProfilePage: React.FC = () => {
                 id="phoneNumber"
                 label="Phone Number"
                 error={profileErrors.phoneNumber?.message}
-                {...registerProfile('phoneNumber', {
+                {...registerProfile("phoneNumber", {
                   pattern: {
                     value: /^\+?[0-9]{10,15}$/,
-                    message: 'Invalid phone number',
+                    message: "Invalid phone number",
                   },
                 })}
               />
@@ -184,15 +197,12 @@ const ProfilePage: React.FC = () => {
                 id="address"
                 label="Address"
                 error={profileErrors.address?.message}
-                {...registerProfile('address')}
+                {...registerProfile("address")}
               />
             </div>
 
             <div className="flex justify-end">
-              <Button
-                type="submit"
-                isLoading={isProfileLoading}
-              >
+              <Button type="submit" isLoading={isProfileLoading}>
                 Update Profile
               </Button>
             </div>
@@ -200,35 +210,38 @@ const ProfilePage: React.FC = () => {
         </Card>
       )}
 
-      {activeTab === 'password' && (
+      {activeTab === "password" && (
         <Card>
           {passwordError && (
-            <Alert 
-              variant="error" 
-              message={passwordError} 
-              onClose={() => setPasswordError(null)} 
+            <Alert
+              variant="error"
+              message={passwordError}
+              onClose={() => setPasswordError(null)}
               className="mb-6"
             />
           )}
 
           {passwordSuccess && (
-            <Alert 
-              variant="success" 
-              message={passwordSuccess} 
-              onClose={() => setPasswordSuccess(null)} 
+            <Alert
+              variant="success"
+              message={passwordSuccess}
+              onClose={() => setPasswordSuccess(null)}
               className="mb-6"
             />
           )}
 
-          <form onSubmit={handlePasswordSubmit(onPasswordSubmit)} className="space-y-6">
+          <form
+            onSubmit={handlePasswordSubmit(onPasswordSubmit)}
+            className="space-y-6"
+          >
             <div>
               <Input
                 id="currentPassword"
                 type="password"
                 label="Current Password"
                 error={passwordErrors.currentPassword?.message}
-                {...registerPassword('currentPassword', { 
-                  required: 'Current password is required' 
+                {...registerPassword("currentPassword", {
+                  required: "Current password is required",
                 })}
               />
             </div>
@@ -239,16 +252,17 @@ const ProfilePage: React.FC = () => {
                 type="password"
                 label="New Password"
                 error={passwordErrors.newPassword?.message}
-                {...registerPassword('newPassword', { 
-                  required: 'New password is required',
+                {...registerPassword("newPassword", {
+                  required: "New password is required",
                   minLength: {
                     value: 8,
-                    message: 'Password must be at least 8 characters',
+                    message: "Password must be at least 8 characters",
                   },
                   pattern: {
-                    value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/,
-                    message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
-                  }
+                    value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/,
+                    message:
+                      "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+                  },
                 })}
               />
             </div>
@@ -259,18 +273,16 @@ const ProfilePage: React.FC = () => {
                 type="password"
                 label="Confirm New Password"
                 error={passwordErrors.confirmPassword?.message}
-                {...registerPassword('confirmPassword', { 
-                  required: 'Please confirm your password',
-                  validate: value => value === newPassword || 'Passwords do not match'
+                {...registerPassword("confirmPassword", {
+                  required: "Please confirm your password",
+                  validate: (value) =>
+                    value === newPassword || "Passwords do not match",
                 })}
               />
             </div>
 
             <div className="flex justify-end">
-              <Button
-                type="submit"
-                isLoading={isPasswordLoading}
-              >
+              <Button type="submit" isLoading={isPasswordLoading}>
                 Change Password
               </Button>
             </div>

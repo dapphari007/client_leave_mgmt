@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getUserById, updateUser } from "../../services/userService";
+import { getUser, updateUser } from "../../services/userService";
 import { useUsers } from "../../hooks";
 
 type FormValues = {
@@ -21,13 +21,22 @@ export default function EditUserPage() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
-  const { data: user, isLoading: isLoadingUser } = useQuery({
+  const {
+    data: userResponse,
+    isLoading: isLoadingUser,
+    error: userError,
+  } = useQuery({
     queryKey: ["user", id],
-    queryFn: () => getUserById(id as string),
+    queryFn: () => getUser(id as string),
     enabled: !!id,
+    retry: 1,
   });
 
-  const { data: users = [] } = useUsers();
+  // Extract the user data from the response
+  const user = userResponse?.user;
+
+  const { data } = useUsers();
+  const users = data?.users || [];
 
   const {
     register,
@@ -93,7 +102,7 @@ export default function EditUserPage() {
     );
   }
 
-  if (!user && !isLoadingUser) {
+  if ((!user && !isLoadingUser) || userError) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">

@@ -1,28 +1,34 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { getUsers, activateUser, deactivateUser } from '../../services/userService';
-import { User } from '../../types';
-import Card from '../../components/ui/Card';
-import Badge from '../../components/ui/Badge';
-import Button from '../../components/ui/Button';
-import Alert from '../../components/ui/Alert';
-import { getErrorMessage } from '../../utils/errorUtils';
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import {
+  getUsers,
+  activateUser,
+  deactivateUser,
+} from "../../services/userService";
+import { User } from "../../types";
+import Card from "../../components/ui/Card";
+import Badge from "../../components/ui/Badge";
+import Button from "../../components/ui/Button";
+import Alert from "../../components/ui/Alert";
+import { getErrorMessage } from "../../utils/errorUtils";
 
 const UsersPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedRole, setSelectedRole] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(false);
 
   // Fetch users
   const { data, refetch } = useQuery({
-    queryKey: ['users', selectedRole, selectedStatus],
-    queryFn: () => getUsers({
-      role: selectedRole !== 'all' ? selectedRole as any : undefined,
-      isActive: selectedStatus !== 'all' ? selectedStatus === 'active' : undefined,
-    }),
+    queryKey: ["users", selectedRole, selectedStatus],
+    queryFn: () =>
+      getUsers({
+        role: selectedRole !== "all" ? (selectedRole as any) : undefined,
+        isActive:
+          selectedStatus !== "all" ? selectedStatus === "active" : undefined,
+      }),
     onError: (err: any) => setError(getErrorMessage(err)),
   });
 
@@ -35,10 +41,10 @@ const UsersPage: React.FC = () => {
     try {
       if (isActive) {
         await deactivateUser(id);
-        setSuccessMessage('User deactivated successfully');
+        setSuccessMessage("User deactivated successfully");
       } else {
         await activateUser(id);
-        setSuccessMessage('User activated successfully');
+        setSuccessMessage("User activated successfully");
       }
       refetch();
     } catch (err) {
@@ -51,11 +57,11 @@ const UsersPage: React.FC = () => {
   // Helper function to render role badge
   const renderRoleBadge = (role: string) => {
     switch (role) {
-      case 'admin':
+      case "admin":
         return <Badge variant="primary">Admin</Badge>;
-      case 'manager':
+      case "manager":
         return <Badge variant="info">Manager</Badge>;
-      case 'employee':
+      case "employee":
         return <Badge variant="default">Employee</Badge>;
       default:
         return <Badge>{role}</Badge>;
@@ -72,19 +78,19 @@ const UsersPage: React.FC = () => {
       </div>
 
       {error && (
-        <Alert 
-          variant="error" 
-          message={error} 
-          onClose={() => setError(null)} 
+        <Alert
+          variant="error"
+          message={error}
+          onClose={() => setError(null)}
           className="mb-6"
         />
       )}
 
       {successMessage && (
-        <Alert 
-          variant="success" 
-          message={successMessage} 
-          onClose={() => setSuccessMessage(null)} 
+        <Alert
+          variant="success"
+          message={successMessage}
+          onClose={() => setSuccessMessage(null)}
           className="mb-6"
         />
       )}
@@ -92,7 +98,10 @@ const UsersPage: React.FC = () => {
       <Card className="mb-6">
         <div className="flex flex-wrap gap-4">
           <div className="w-full sm:w-auto">
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="role"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Role
             </label>
             <select
@@ -108,7 +117,10 @@ const UsersPage: React.FC = () => {
             </select>
           </div>
           <div className="w-full sm:w-auto">
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="status"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Status
             </label>
             <select
@@ -135,20 +147,23 @@ const UsersPage: React.FC = () => {
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                         <span className="text-gray-500 font-medium">
-                          {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                          {user.firstName.charAt(0)}
+                          {user.lastName.charAt(0)}
                         </span>
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
                           {user.firstName} {user.lastName}
                         </div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="text-sm text-gray-500">
+                          {user.email}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       {renderRoleBadge(user.role)}
-                      <Badge variant={user.isActive ? 'success' : 'danger'}>
-                        {user.isActive ? 'Active' : 'Inactive'}
+                      <Badge variant={user.isActive ? "success" : "danger"}>
+                        {user.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </div>
                   </div>
@@ -156,22 +171,24 @@ const UsersPage: React.FC = () => {
                     <div className="sm:flex">
                       <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                         <span className="mr-1 font-medium">Phone:</span>
-                        {user.phoneNumber || 'N/A'}
+                        {user.phoneNumber || "N/A"}
                       </div>
                     </div>
                     <div className="mt-2 flex items-center text-sm sm:mt-0">
-                      <Link to={`/users/${user.id}`}>
+                      <Link to={`/users/edit/${user.id}`}>
                         <Button variant="secondary" size="sm" className="mr-2">
                           Edit
                         </Button>
                       </Link>
                       <Button
-                        variant={user.isActive ? 'danger' : 'success'}
+                        variant={user.isActive ? "danger" : "success"}
                         size="sm"
-                        onClick={() => handleToggleUserStatus(user.id, user.isActive)}
+                        onClick={() =>
+                          handleToggleUserStatus(user.id, user.isActive)
+                        }
                         disabled={isLoading}
                       >
-                        {user.isActive ? 'Deactivate' : 'Activate'}
+                        {user.isActive ? "Deactivate" : "Activate"}
                       </Button>
                     </div>
                   </div>

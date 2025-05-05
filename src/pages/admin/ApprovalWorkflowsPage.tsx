@@ -78,8 +78,8 @@ export default function ApprovalWorkflowsPage() {
             <thead>
               <tr className="bg-gray-100">
                 <th className="py-3 px-4 text-left">Name</th>
-                <th className="py-3 px-4 text-left">Description</th>
-                <th className="py-3 px-4 text-left">Steps</th>
+                <th className="py-3 px-4 text-left">Days Range</th>
+                <th className="py-3 px-4 text-left">Approval Levels</th>
                 <th className="py-3 px-4 text-left">Created At</th>
                 <th className="py-3 px-4 text-left">Actions</th>
               </tr>
@@ -91,8 +91,14 @@ export default function ApprovalWorkflowsPage() {
                   className="border-t border-gray-200 hover:bg-gray-50"
                 >
                   <td className="py-3 px-4">{workflow.name}</td>
-                  <td className="py-3 px-4">{workflow.description || "-"}</td>
-                  <td className="py-3 px-4">{workflow.steps.length}</td>
+                  <td className="py-3 px-4">
+                    {workflow.minDays} - {workflow.maxDays} days
+                  </td>
+                  <td className="py-3 px-4">
+                    {workflow.approvalLevels
+                      ? workflow.approvalLevels.length
+                      : 0}
+                  </td>
                   <td className="py-3 px-4">
                     {new Date(workflow.createdAt).toLocaleDateString()}
                   </td>

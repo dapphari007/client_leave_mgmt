@@ -5,12 +5,18 @@ import {
   isWeekend,
 } from "date-fns";
 
-export const formatDate = (dateString: string): string => {
-  return format(parseISO(dateString), "MMM dd, yyyy");
+export const formatDate = (date: Date | string): string => {
+  if (date instanceof Date) {
+    return format(date, "MMM dd, yyyy");
+  }
+  return format(parseISO(date), "MMM dd, yyyy");
 };
 
-export const formatDateTime = (dateString: string): string => {
-  return format(parseISO(dateString), "MMM dd, yyyy HH:mm");
+export const formatDateTime = (date: Date | string): string => {
+  if (date instanceof Date) {
+    return format(date, "MMM dd, yyyy HH:mm");
+  }
+  return format(parseISO(date), "MMM dd, yyyy HH:mm");
 };
 
 export const calculateBusinessDays = (

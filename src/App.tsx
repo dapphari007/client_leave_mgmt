@@ -6,10 +6,16 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Auth Pages
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+import SuperAdminLoginPage from "./pages/auth/SuperAdminLoginPage";
+import SuperAdminLoginInfo from "./pages/auth/SuperAdminLoginInfo";
+import LoginDebugger from "./pages/auth/LoginDebugger";
+import CreateSuperAdmin from "./pages/auth/CreateSuperAdmin";
+import SimpleLoginForm from "./pages/auth/SimpleLoginForm";
 
 // Dashboard Pages
 import DashboardPage from "./pages/dashboard/DashboardPage";
@@ -19,6 +25,7 @@ import MyLeavesPage from "./pages/leaves/MyLeavesPage";
 import ApplyLeavePage from "./pages/leaves/ApplyLeavePage";
 import TeamLeavesPage from "./pages/leaves/TeamLeavesPage";
 import ViewLeaveRequestPage from "./pages/leaves/ViewLeaveRequestPage";
+import LeaveCalendarPage from "./pages/leaves/LeaveCalendarPage";
 
 // Profile Pages
 import ProfilePage from "./pages/profile/ProfilePage";
@@ -30,6 +37,7 @@ import EditUserPage from "./pages/admin/EditUserPage";
 import LeaveTypesPage from "./pages/admin/LeaveTypesPage";
 import CreateLeaveTypePage from "./pages/admin/CreateLeaveTypePage";
 import EditLeaveTypePage from "./pages/admin/EditLeaveTypePage";
+import LeaveTypeConfigPage from "./pages/admin/LeaveTypeConfigPage";
 import HolidaysPage from "./pages/admin/HolidaysPage";
 import CreateHolidayPage from "./pages/admin/CreateHolidayPage";
 import EditHolidayPage from "./pages/admin/EditHolidayPage";
@@ -37,6 +45,7 @@ import LeaveBalancesPage from "./pages/admin/LeaveBalancesPage";
 import ApprovalWorkflowsPage from "./pages/admin/ApprovalWorkflowsPage";
 import CreateApprovalWorkflowPage from "./pages/admin/CreateApprovalWorkflowPage";
 import EditApprovalWorkflowPage from "./pages/admin/EditApprovalWorkflowPage";
+import SuperAdminDashboardPage from "./pages/admin/SuperAdminDashboardPage";
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -56,8 +65,28 @@ const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
+    path: "/super-admin",
+    element: <SuperAdminLoginPage />,
+  },
+  {
     path: "/register",
     element: <RegisterPage />,
+  },
+  {
+    path: "/super-admin-info",
+    element: <SuperAdminLoginInfo />,
+  },
+  {
+    path: "/login-debug",
+    element: <LoginDebugger />,
+  },
+  {
+    path: "/create-super-admin",
+    element: <CreateSuperAdmin />,
+  },
+  {
+    path: "/simple-login",
+    element: <SimpleLoginForm />,
   },
 
   // Protected Routes - All Users
@@ -68,6 +97,7 @@ const router = createBrowserRouter([
         path: "/",
         element: <DashboardPage />,
       },
+
       {
         path: "/my-leaves",
         element: <MyLeavesPage />,
@@ -87,9 +117,11 @@ const router = createBrowserRouter([
     ],
   },
 
-  // Manager Routes
+  // Manager and Team Lead Routes
   {
-    element: <ProtectedRoute allowedRoles={["manager", "admin"]} />,
+    element: (
+      <ProtectedRoute allowedRoles={["manager", "admin", "team_lead", "hr"]} />
+    ),
     children: [
       {
         path: "/team-leaves",
@@ -98,9 +130,58 @@ const router = createBrowserRouter([
     ],
   },
 
+  // Leave Calendar Route (accessible to all roles)
+  {
+    element: (
+      <ProtectedRoute
+        allowedRoles={[
+          "manager",
+          "admin",
+          "team_lead",
+          "hr",
+          "employee",
+          "super_admin",
+        ]}
+      />
+    ),
+    children: [
+      {
+        path: "/leave-calendar",
+        element: <LeaveCalendarPage />,
+      },
+    ],
+  },
+
+  // Super Admin Routes
+  {
+    path: "/super-admin-dashboard",
+    element: (
+      <ProtectedRoute allowedRoles={["super_admin"]}>
+        <SuperAdminDashboardPage />
+      </ProtectedRoute>
+    ),
+  },
+  // Redirects for super admin dashboard
+  {
+    path: "/dashboard",
+    element: (
+      <ProtectedRoute allowedRoles={["super_admin"]}>
+        <Navigate to="/super-admin-dashboard" replace />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/",
+    element: (
+      <ProtectedRoute allowedRoles={["super_admin"]}>
+        <Navigate to="/super-admin-dashboard" replace />
+      </ProtectedRoute>
+    ),
+  },
+
   // Admin Routes
   {
-    element: <ProtectedRoute allowedRoles={["admin"]} />,
+    element: <ProtectedRoute allowedRoles={["super_admin", "admin"]} />,
     children: [
       {
         path: "/users",
@@ -125,6 +206,10 @@ const router = createBrowserRouter([
       {
         path: "/leave-types/edit/:id",
         element: <EditLeaveTypePage />,
+      },
+      {
+        path: "/leave-types/config",
+        element: <LeaveTypeConfigPage />,
       },
       {
         path: "/holidays",
@@ -168,7 +253,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <RouterProvider router={router} />
+        <ErrorBoundary>
+          <RouterProvider router={router} />
+        </ErrorBoundary>
       </AuthProvider>
     </QueryClientProvider>
   );

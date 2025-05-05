@@ -4,10 +4,16 @@ import { useAuth } from "../../context/AuthContext";
 import MainLayout from "../layout/MainLayout";
 
 interface ProtectedRouteProps {
-  allowedRoles?: ("employee" | "manager" | "admin" | "hr")[];
+  allowedRoles?: ("employee" | "manager" | "admin" | "hr" | "super_admin")[];
+  excludeRoles?: ("employee" | "manager" | "admin" | "hr" | "super_admin")[];
+  children?: React.ReactNode;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  allowedRoles,
+  excludeRoles,
+  children,
+}) => {
   const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
 
@@ -30,12 +36,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     return <Navigate to="/" replace />;
   }
 
+  // Check excluded roles
+  if (excludeRoles && user && excludeRoles.includes(user.role)) {
+    // For super_admin, redirect to super admin dashboard
+    if (user.role === "super_admin") {
+      return <Navigate to="/super-admin-dashboard" replace />;
+    }
+    // For other excluded roles, redirect to home
+    return <Navigate to="/" replace />;
+  }
+
   // Render the protected content
-  return (
-    <MainLayout>
-      <Outlet />
-    </MainLayout>
-  );
+  return <MainLayout>{children || <Outlet />}</MainLayout>;
 };
 
 export default ProtectedRoute;

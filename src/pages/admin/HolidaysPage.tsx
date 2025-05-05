@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
   getHolidays,
   activateHoliday,
@@ -19,6 +20,7 @@ import { formatDate } from "../../utils/dateUtils";
 import { getErrorMessage } from "../../utils/errorUtils";
 
 const HolidaysPage: React.FC = () => {
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(
@@ -248,7 +250,14 @@ const HolidaysPage: React.FC = () => {
                         </p>
                       )}
                     </div>
-                    <div>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => navigate(`/holidays/edit/${holiday.id}`)}
+                      >
+                        Edit
+                      </Button>
                       <Button
                         variant={holiday.isActive ? "danger" : "success"}
                         size="sm"

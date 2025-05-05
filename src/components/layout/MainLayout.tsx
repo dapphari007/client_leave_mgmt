@@ -24,22 +24,38 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
 
   const navigation = [
-    { name: "Dashboard", href: "/", icon: HomeIcon },
+    {
+      name: "Dashboard",
+      href: user?.role === "super_admin" ? "/super-admin-dashboard" : "/",
+      icon: HomeIcon,
+    },
     { name: "My Leaves", href: "/my-leaves", icon: CalendarIcon },
     {
       name: "Apply Leave",
       href: "/apply-leave",
       icon: ClipboardDocumentListIcon,
     },
+    {
+      name: "Leave Calendar",
+      href: "/leave-calendar",
+      icon: CalendarDaysIcon,
+    },
   ];
 
-  // Additional navigation items for managers, HR, and admins
+  // Additional navigation items for managers, team leads, HR, and admins
   const managerNavigation = [
     { name: "Team Leaves", href: "/team-leaves", icon: UserGroupIcon },
+    { name: "Leave Calendar", href: "/leave-calendar", icon: CalendarDaysIcon },
+  ];
+
+  const teamLeadNavigation = [
+    { name: "Team Leaves", href: "/team-leaves", icon: UserGroupIcon },
+    { name: "Leave Calendar", href: "/leave-calendar", icon: CalendarDaysIcon },
   ];
 
   const hrNavigation = [
     { name: "Team Leaves", href: "/team-leaves", icon: UserGroupIcon },
+    { name: "Leave Calendar", href: "/leave-calendar", icon: CalendarDaysIcon },
     {
       name: "Leave Balances",
       href: "/leave-balances",
@@ -55,6 +71,28 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       icon: ClipboardDocumentListIcon,
     },
     { name: "Holidays", href: "/holidays", icon: CalendarDaysIcon },
+    {
+      name: "Leave Balances",
+      href: "/leave-balances",
+      icon: ClipboardDocumentListIcon,
+    },
+    {
+      name: "Approval Workflows",
+      href: "/approval-workflows",
+      icon: UserGroupIcon,
+    },
+  ];
+
+  // Super admin navigation
+  const superAdminNavigation = [
+    { name: "Users", href: "/users", icon: UserGroupIcon },
+    {
+      name: "Leave Types",
+      href: "/leave-types",
+      icon: ClipboardDocumentListIcon,
+    },
+    { name: "Holidays", href: "/holidays", icon: CalendarDaysIcon },
+    { name: "Leave Calendar", href: "/leave-calendar", icon: CalendarDaysIcon },
     {
       name: "Leave Balances",
       href: "/leave-balances",
@@ -158,6 +196,30 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                       </Link>
                     ))}
 
+                  {user?.role === "team_lead" &&
+                    teamLeadNavigation.map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${
+                          isActive(item.href)
+                            ? "bg-primary-100 text-primary-900"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        }`}
+                        onClick={() => setSidebarOpen(false)}
+                      >
+                        <item.icon
+                          className={`mr-4 h-6 w-6 flex-shrink-0 ${
+                            isActive(item.href)
+                              ? "text-primary-600"
+                              : "text-gray-400 group-hover:text-gray-500"
+                          }`}
+                          aria-hidden="true"
+                        />
+                        {item.name}
+                      </Link>
+                    ))}
+
                   {user?.role === "hr" &&
                     hrNavigation.map((item) => (
                       <Link
@@ -184,6 +246,30 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
                   {user?.role === "admin" &&
                     adminNavigation.map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${
+                          isActive(item.href)
+                            ? "bg-primary-100 text-primary-900"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        }`}
+                        onClick={() => setSidebarOpen(false)}
+                      >
+                        <item.icon
+                          className={`mr-4 h-6 w-6 flex-shrink-0 ${
+                            isActive(item.href)
+                              ? "text-primary-600"
+                              : "text-gray-400 group-hover:text-gray-500"
+                          }`}
+                          aria-hidden="true"
+                        />
+                        {item.name}
+                      </Link>
+                    ))}
+
+                  {user?.role === "super_admin" &&
+                    superAdminNavigation.map((item) => (
                       <Link
                         key={item.name}
                         to={item.href}
@@ -275,6 +361,37 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 </>
               )}
 
+              {user?.role === "team_lead" && (
+                <>
+                  <div className="mt-8 mb-2 px-3">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Team Lead
+                    </h3>
+                  </div>
+                  {teamLeadNavigation.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                        isActive(item.href)
+                          ? "bg-primary-100 text-primary-900"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      }`}
+                    >
+                      <item.icon
+                        className={`mr-3 h-5 w-5 flex-shrink-0 ${
+                          isActive(item.href)
+                            ? "text-primary-600"
+                            : "text-gray-400 group-hover:text-gray-500"
+                        }`}
+                        aria-hidden="true"
+                      />
+                      {item.name}
+                    </Link>
+                  ))}
+                </>
+              )}
+
               {user?.role === "hr" && (
                 <>
                   <div className="mt-8 mb-2 px-3">
@@ -314,6 +431,37 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     </h3>
                   </div>
                   {adminNavigation.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                        isActive(item.href)
+                          ? "bg-primary-100 text-primary-900"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      }`}
+                    >
+                      <item.icon
+                        className={`mr-3 h-5 w-5 flex-shrink-0 ${
+                          isActive(item.href)
+                            ? "text-primary-600"
+                            : "text-gray-400 group-hover:text-gray-500"
+                        }`}
+                        aria-hidden="true"
+                      />
+                      {item.name}
+                    </Link>
+                  ))}
+                </>
+              )}
+
+              {user?.role === "super_admin" && (
+                <>
+                  <div className="mt-8 mb-2 px-3">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Super Administration
+                    </h3>
+                  </div>
+                  {superAdminNavigation.map((item) => (
                     <Link
                       key={item.name}
                       to={item.href}

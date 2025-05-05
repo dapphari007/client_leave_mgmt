@@ -1,26 +1,32 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { getLeaveTypes, activateLeaveType, deactivateLeaveType } from '../../services/leaveTypeService';
-import { LeaveType } from '../../types';
-import Card from '../../components/ui/Card';
-import Badge from '../../components/ui/Badge';
-import Button from '../../components/ui/Button';
-import Alert from '../../components/ui/Alert';
-import { getErrorMessage } from '../../utils/errorUtils';
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import {
+  getLeaveTypes,
+  activateLeaveType,
+  deactivateLeaveType,
+} from "../../services/leaveTypeService";
+import { LeaveType } from "../../types";
+import Card from "../../components/ui/Card";
+import Badge from "../../components/ui/Badge";
+import Button from "../../components/ui/Button";
+import Alert from "../../components/ui/Alert";
+import { getErrorMessage } from "../../utils/errorUtils";
 
 const LeaveTypesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(false);
 
   // Fetch leave types
   const { data, refetch } = useQuery({
-    queryKey: ['leaveTypes', selectedStatus],
-    queryFn: () => getLeaveTypes({
-      isActive: selectedStatus !== 'all' ? selectedStatus === 'active' : undefined,
-    }),
+    queryKey: ["leaveTypes", selectedStatus],
+    queryFn: () =>
+      getLeaveTypes({
+        isActive:
+          selectedStatus !== "all" ? selectedStatus === "active" : undefined,
+      }),
     onError: (err: any) => setError(getErrorMessage(err)),
   });
 
@@ -33,10 +39,10 @@ const LeaveTypesPage: React.FC = () => {
     try {
       if (isActive) {
         await deactivateLeaveType(id);
-        setSuccessMessage('Leave type deactivated successfully');
+        setSuccessMessage("Leave type deactivated successfully");
       } else {
         await activateLeaveType(id);
-        setSuccessMessage('Leave type activated successfully');
+        setSuccessMessage("Leave type activated successfully");
       }
       refetch();
     } catch (err) {
@@ -50,25 +56,30 @@ const LeaveTypesPage: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">Leave Types</h1>
-        <Link to="/leave-types/create">
-          <Button>Create Leave Type</Button>
-        </Link>
+        <div className="flex space-x-2">
+          <Link to="/leave-types/config">
+            <Button variant="secondary">Configure Leave Types</Button>
+          </Link>
+          <Link to="/leave-types/create">
+            <Button>Create Leave Type</Button>
+          </Link>
+        </div>
       </div>
 
       {error && (
-        <Alert 
-          variant="error" 
-          message={error} 
-          onClose={() => setError(null)} 
+        <Alert
+          variant="error"
+          message={error}
+          onClose={() => setError(null)}
           className="mb-6"
         />
       )}
 
       {successMessage && (
-        <Alert 
-          variant="success" 
-          message={successMessage} 
-          onClose={() => setSuccessMessage(null)} 
+        <Alert
+          variant="success"
+          message={successMessage}
+          onClose={() => setSuccessMessage(null)}
           className="mb-6"
         />
       )}
@@ -76,7 +87,10 @@ const LeaveTypesPage: React.FC = () => {
       <Card className="mb-6">
         <div className="flex flex-wrap gap-4">
           <div className="w-full sm:w-auto">
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="status"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Status
             </label>
             <select
@@ -103,8 +117,8 @@ const LeaveTypesPage: React.FC = () => {
                     <h3 className="text-lg font-medium text-gray-900 mr-2">
                       {leaveType.name}
                     </h3>
-                    <Badge variant={leaveType.isActive ? 'success' : 'danger'}>
-                      {leaveType.isActive ? 'Active' : 'Inactive'}
+                    <Badge variant={leaveType.isActive ? "success" : "danger"}>
+                      {leaveType.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
@@ -112,24 +126,30 @@ const LeaveTypesPage: React.FC = () => {
                   </p>
                   <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
                     <div className="text-sm text-gray-500">
-                      <span className="font-medium">Default Days:</span> {leaveType.defaultDays}
+                      <span className="font-medium">Default Days:</span>{" "}
+                      {leaveType.defaultDays}
                     </div>
                     <div className="text-sm text-gray-500">
-                      <span className="font-medium">Carry Forward:</span> {leaveType.isCarryForward ? 'Yes' : 'No'}
+                      <span className="font-medium">Carry Forward:</span>{" "}
+                      {leaveType.isCarryForward ? "Yes" : "No"}
                     </div>
                     {leaveType.isCarryForward && (
                       <div className="text-sm text-gray-500">
-                        <span className="font-medium">Max Carry Forward:</span> {leaveType.maxCarryForwardDays || 'N/A'}
+                        <span className="font-medium">Max Carry Forward:</span>{" "}
+                        {leaveType.maxCarryForwardDays || "N/A"}
                       </div>
                     )}
                     <div className="text-sm text-gray-500">
-                      <span className="font-medium">Half Day Allowed:</span> {leaveType.isHalfDayAllowed ? 'Yes' : 'No'}
+                      <span className="font-medium">Half Day Allowed:</span>{" "}
+                      {leaveType.isHalfDayAllowed ? "Yes" : "No"}
                     </div>
                     <div className="text-sm text-gray-500">
-                      <span className="font-medium">Paid Leave:</span> {leaveType.isPaidLeave ? 'Yes' : 'No'}
+                      <span className="font-medium">Paid Leave:</span>{" "}
+                      {leaveType.isPaidLeave ? "Yes" : "No"}
                     </div>
                     <div className="text-sm text-gray-500">
-                      <span className="font-medium">Gender Specific:</span> {leaveType.applicableGender || 'All'}
+                      <span className="font-medium">Gender Specific:</span>{" "}
+                      {leaveType.applicableGender || "All"}
                     </div>
                   </div>
                 </div>
@@ -140,12 +160,14 @@ const LeaveTypesPage: React.FC = () => {
                     </Button>
                   </Link>
                   <Button
-                    variant={leaveType.isActive ? 'danger' : 'success'}
+                    variant={leaveType.isActive ? "danger" : "success"}
                     size="sm"
-                    onClick={() => handleToggleStatus(leaveType.id, leaveType.isActive)}
+                    onClick={() =>
+                      handleToggleStatus(leaveType.id, leaveType.isActive)
+                    }
                     disabled={isLoading}
                   >
-                    {leaveType.isActive ? 'Deactivate' : 'Activate'}
+                    {leaveType.isActive ? "Deactivate" : "Activate"}
                   </Button>
                 </div>
               </div>
