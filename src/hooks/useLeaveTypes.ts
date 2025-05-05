@@ -11,7 +11,16 @@ export const useLeaveTypes = () => {
 export const useLeaveType = (id: string | undefined) => {
   return useQuery({
     queryKey: ["leaveType", id],
-    queryFn: () => getLeaveType(id as string),
+    queryFn: async () => {
+      if (!id) {
+        throw new Error("Leave type ID is required");
+      }
+      console.log("Fetching leave type with ID:", id);
+      const response = await getLeaveType(id);
+      console.log("Leave type API response:", response);
+      return response;
+    },
     enabled: !!id,
+    retry: 1,
   });
 };

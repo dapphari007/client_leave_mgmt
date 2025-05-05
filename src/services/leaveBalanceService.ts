@@ -99,3 +99,22 @@ export const bulkCreateLeaveBalances = async (
   );
   return response.leaveBalances || [];
 };
+
+export const createAllLeaveBalancesForAllUsers = async (): Promise<{
+  created: number;
+  updated: number;
+  skipped: number;
+  leaveTypes: number;
+  users: number;
+}> => {
+  const response = await post<{
+    results: {
+      created: number;
+      updated: number;
+      skipped: number;
+      leaveTypes: number;
+      users: number;
+    };
+  }>("/leave-balances/create-all-for-all-users", {});
+  return response.results;
+};

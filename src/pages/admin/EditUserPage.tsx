@@ -2,14 +2,19 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getUser, updateUser } from "../../services/userService";
+import {
+  getUser,
+  updateUser,
+  resetUserPassword,
+} from "../../services/userService";
 import { useUsers } from "../../hooks";
+import ResetPasswordModal from "../../components/users/ResetPasswordModal";
 
 type FormValues = {
   firstName: string;
   lastName: string;
   email: string;
-  role: "employee" | "manager" | "hr" | "admin";
+  role: "employee" | "team_lead" | "manager" | "hr" | "admin" | "super_admin";
   department: string;
   position: string;
   managerId?: string;
@@ -20,6 +25,9 @@ export default function EditUserPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] =
+    useState(false);
 
   const {
     data: userResponse,
@@ -85,13 +93,38 @@ export default function EditUserPage() {
   });
 
   const onSubmit = (data: FormValues) => {
-    // Only include managerId if role is employee
+    // Only include managerId if role is employee or team_lead
     const userData = {
       ...data,
-      managerId: data.role === "employee" ? data.managerId : undefined,
+      managerId:
+        data.role === "employee" || data.role === "team_lead"
+          ? data.managerId
+          : undefined,
+      department: data.department,
+      position: data.position,
     };
 
     updateMutation.mutate(userData);
+  };
+
+  // Handle reset password
+  const handleResetPassword = () => {
+    setIsResetPasswordModalOpen(true);
+  };
+
+  // Submit reset password
+  const handleResetPasswordSubmit = async (newPassword: string) => {
+    if (!id) return;
+
+    try {
+      await resetUserPassword(id, { newPassword });
+      setSuccessMessage(`Password has been reset successfully`);
+      setIsResetPasswordModalOpen(false);
+    } catch (err: any) {
+      throw new Error(
+        err.response?.data?.message || "Failed to reset password"
+      );
+    }
   };
 
   if (isLoadingUser) {
@@ -125,6 +158,18 @@ export default function EditUserPage() {
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          {successMessage}
+          <button
+            className="float-right text-green-700 hover:text-green-900"
+            onClick={() => setSuccessMessage(null)}
+          >
+            &times;
+          </button>
         </div>
       )}
 
@@ -196,9 +241,11 @@ export default function EditUserPage() {
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             >
               <option value="employee">Employee</option>
+              <option value="team_lead">Team Lead</option>
               <option value="manager">Manager</option>
               <option value="hr">HR</option>
               <option value="admin">Admin</option>
+              <option value="super_admin">Super Admin</option>
             </select>
             {errors.role && (
               <p className="text-red-500 text-xs italic">
@@ -216,6 +263,11 @@ export default function EditUserPage() {
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               type="text"
             />
+            {errors.department && (
+              <p className="text-red-500 text-xs italic">
+                {errors.department.message}
+              </p>
+            )}
           </div>
 
           <div>
@@ -227,9 +279,14 @@ export default function EditUserPage() {
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               type="text"
             />
+            {errors.position && (
+              <p className="text-red-500 text-xs italic">
+                {errors.position.message}
+              </p>
+            )}
           </div>
 
-          {watchRole === "employee" && (
+          {(watchRole === "employee" || watchRole === "team_lead") && (
             <div>
               <label className="block text-gray-700 text-sm font-bold mb-2">
                 Manager
@@ -262,23 +319,43 @@ export default function EditUserPage() {
           </div>
         </div>
 
-        <div className="flex justify-end space-x-4">
+        <div className="flex justify-between">
           <button
             type="button"
-            onClick={() => navigate("/users")}
-            className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100"
+            onClick={handleResetPassword}
+            className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded"
           >
-            Cancel
+            Reset Password
           </button>
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-            disabled={updateMutation.isPending}
-          >
-            {updateMutation.isPending ? "Saving..." : "Save Changes"}
-          </button>
+
+          <div className="flex space-x-4">
+            <button
+              type="button"
+              onClick={() => navigate("/users")}
+              className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
         </div>
       </form>
+
+      {/* Reset Password Modal */}
+      {user && (
+        <ResetPasswordModal
+          isOpen={isResetPasswordModalOpen}
+          onClose={() => setIsResetPasswordModalOpen(false)}
+          onSubmit={handleResetPasswordSubmit}
+          userName={`${user.firstName} ${user.lastName}`}
+        />
+      )}
     </div>
   );
 }

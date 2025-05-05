@@ -3,13 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getAllLeaveBalances,
   updateLeaveBalance,
-  bulkCreateLeaveBalances,
 } from "../../services/leaveBalanceService";
 import { getAllLeaveTypes } from "../../services/leaveTypeService";
 import { getAllUsers } from "../../services/userService";
 
 export default function LeaveBalancesPage() {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedBalance, setSelectedBalance] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -20,13 +18,6 @@ export default function LeaveBalancesPage() {
     totalDays: 0,
     adjustmentDays: 0,
     adjustmentReason: "",
-  });
-
-  // Form state for bulk creation
-  const [bulkCreateData, setBulkCreateData] = useState({
-    leaveTypeId: "",
-    totalDays: 0,
-    year: new Date().getFullYear(),
   });
 
   const queryClient = useQueryClient();
@@ -60,21 +51,6 @@ export default function LeaveBalancesPage() {
     },
   });
 
-  const bulkCreateMutation = useMutation({
-    mutationFn: bulkCreateLeaveBalances,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leaveBalances"] });
-      setIsCreateModalOpen(false);
-      setSuccess("Leave balances created successfully for all users");
-      setTimeout(() => setSuccess(null), 3000);
-    },
-    onError: (err: any) => {
-      setError(
-        err.response?.data?.message || "Failed to create leave balances"
-      );
-    },
-  });
-
   const handleEditClick = (balance: any) => {
     setSelectedBalance(balance);
     setEditFormData({
@@ -105,22 +81,6 @@ export default function LeaveBalancesPage() {
     });
   };
 
-  const handleBulkCreateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!bulkCreateData.leaveTypeId) {
-      setError("Please select a leave type");
-      return;
-    }
-
-    if (bulkCreateData.totalDays <= 0) {
-      setError("Total days must be greater than 0");
-      return;
-    }
-
-    bulkCreateMutation.mutate(bulkCreateData);
-  };
-
   if (isLoadingBalances) {
     return (
       <div className="flex justify-center items-center h-64">Loading...</div>
@@ -131,12 +91,6 @@ export default function LeaveBalancesPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Leave Balances</h1>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-        >
-          Bulk Create Leave Balances
-        </button>
       </div>
 
       {error && (
@@ -312,102 +266,6 @@ export default function LeaveBalancesPage() {
                   disabled={updateMutation.isPending}
                 >
                   {updateMutation.isPending ? "Saving..." : "Save Changes"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Bulk Create Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full">
-            <h3 className="text-lg font-medium mb-4">
-              Bulk Create Leave Balances
-            </h3>
-
-            <form onSubmit={handleBulkCreateSubmit}>
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Leave Type
-                </label>
-                <select
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  value={bulkCreateData.leaveTypeId}
-                  onChange={(e) =>
-                    setBulkCreateData({
-                      ...bulkCreateData,
-                      leaveTypeId: e.target.value,
-                    })
-                  }
-                  required
-                >
-                  <option value="">Select Leave Type</option>
-                  {leaveTypes.map((type: any) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Total Days
-                </label>
-                <input
-                  type="number"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  value={bulkCreateData.totalDays}
-                  onChange={(e) =>
-                    setBulkCreateData({
-                      ...bulkCreateData,
-                      totalDays: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  min="1"
-                  required
-                />
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Year
-                </label>
-                <input
-                  type="number"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  value={bulkCreateData.year}
-                  onChange={(e) =>
-                    setBulkCreateData({
-                      ...bulkCreateData,
-                      year:
-                        parseInt(e.target.value) || new Date().getFullYear(),
-                    })
-                  }
-                  min="2000"
-                  max="2100"
-                  required
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  disabled={bulkCreateMutation.isPending}
-                >
-                  {bulkCreateMutation.isPending
-                    ? "Creating..."
-                    : "Create for All Users"}
                 </button>
               </div>
             </form>

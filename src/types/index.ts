@@ -124,7 +124,7 @@ export interface CreateLeaveRequestData {
 }
 
 export interface UpdateLeaveRequestStatusData {
-  status: "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "cancelled";
   comments?: string;
 }
 

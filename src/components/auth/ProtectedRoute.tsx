@@ -33,11 +33,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check role permissions if allowedRoles is provided
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    console.log("ProtectedRoute - User role not allowed:", user.role, "Allowed roles:", allowedRoles);
     return <Navigate to="/" replace />;
   }
 
   // Check excluded roles
   if (excludeRoles && user && excludeRoles.includes(user.role)) {
+    console.log("ProtectedRoute - User role excluded:", user.role, "Excluded roles:", excludeRoles);
     // For super_admin, redirect to super admin dashboard
     if (user.role === "super_admin") {
       return <Navigate to="/super-admin-dashboard" replace />;
@@ -45,6 +47,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     // For other excluded roles, redirect to home
     return <Navigate to="/" replace />;
   }
+  
+  console.log("ProtectedRoute - Rendering protected content for path:", location.pathname);
 
   // Render the protected content
   return <MainLayout>{children || <Outlet />}</MainLayout>;

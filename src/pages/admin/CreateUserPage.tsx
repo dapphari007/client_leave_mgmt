@@ -148,6 +148,7 @@ const CreateUserPage: React.FC = () => {
                 error={errors.role?.message}
                 options={[
                   { value: "employee", label: "Employee" },
+                  { value: "team_lead", label: "Team Lead" },
                   { value: "manager", label: "Manager" },
                   { value: "admin", label: "Admin" },
                   { value: "hr", label: "HR" },
@@ -171,7 +172,26 @@ const CreateUserPage: React.FC = () => {
             </div>
           </div>
 
-          {selectedRole === "employee" && (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <Input
+                id="department"
+                label="Department"
+                error={errors.department?.message}
+                {...register("department")}
+              />
+            </div>
+            <div>
+              <Input
+                id="position"
+                label="Position"
+                error={errors.position?.message}
+                {...register("position")}
+              />
+            </div>
+          </div>
+
+          {(selectedRole === "employee" || selectedRole === "team_lead") && (
             <div>
               <Select
                 id="managerId"
@@ -187,7 +207,7 @@ const CreateUserPage: React.FC = () => {
                 }
                 placeholder="Select a manager"
                 {...register("managerId", {
-                  required: "Manager is required for employees",
+                  required: "Manager is required for employees and team leads",
                 })}
               />
             </div>

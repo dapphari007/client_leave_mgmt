@@ -26,6 +26,10 @@ export interface GetUsersResponse {
   count: number;
 }
 
+export interface ResetPasswordData {
+  newPassword: string;
+}
+
 export const createUser = async (
   data: CreateUserData
 ): Promise<ApiResponse<User>> => {
@@ -57,6 +61,13 @@ export const deactivateUser = async (
   id: string
 ): Promise<ApiResponse<User>> => {
   return put<ApiResponse<User>>(`/users/${id}/deactivate`);
+};
+
+export const resetUserPassword = async (
+  id: string,
+  data: ResetPasswordData
+): Promise<ApiResponse<any>> => {
+  return put<ApiResponse<any>>(`/users/${id}/reset-password`, data);
 };
 
 // Add missing exports

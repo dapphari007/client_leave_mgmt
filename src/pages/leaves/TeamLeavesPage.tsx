@@ -57,11 +57,11 @@ const TeamLeavesPage: React.FC = () => {
   // Handle approve/reject leave request
   const handleUpdateStatus = async (
     id: string,
-    status: "approved" | "rejected"
+    status: "pending" | "approved" | "rejected" | "cancelled"
   ) => {
     if (status === "approved") {
       setIsApproving(true);
-    } else {
+    } else if (status === "rejected") {
       setIsRejecting(true);
     }
 
@@ -71,12 +71,17 @@ const TeamLeavesPage: React.FC = () => {
         comments: comments.trim() || undefined,
       };
 
-      await updateLeaveRequestStatus(id, data);
+      console.log("Sending request with data:", data);
+
+      const response = await updateLeaveRequestStatus(id, data);
+      console.log("Response received:", response);
+
       setSuccessMessage(`Leave request ${status} successfully`);
       setActionLeaveId(null);
       setComments("");
       refetch();
     } catch (err) {
+      console.error("Error updating leave request status:", err);
       setError(getErrorMessage(err));
     } finally {
       setIsApproving(false);

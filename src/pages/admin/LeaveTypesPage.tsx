@@ -1,10 +1,12 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import axios from "axios";
 import {
   getLeaveTypes,
   activateLeaveType,
   deactivateLeaveType,
+  createLeaveType,
 } from "../../services/leaveTypeService";
 import { LeaveType } from "../../types";
 import Card from "../../components/ui/Card";
@@ -12,12 +14,107 @@ import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import Alert from "../../components/ui/Alert";
 import { getErrorMessage } from "../../utils/errorUtils";
+import config from "../../config";
+
+// Default leave types data
+const defaultLeaveTypes = [
+  {
+    name: "Annual Leave",
+    description: "Regular paid time off for vacation or personal matters",
+    defaultDays: 20,
+    isCarryForward: true,
+    maxCarryForwardDays: 5,
+    isActive: true,
+    applicableGender: null,
+    isHalfDayAllowed: true,
+    isPaidLeave: true,
+  },
+  {
+    name: "Sick Leave",
+    description: "Leave for medical reasons or illness",
+    defaultDays: 10,
+    isCarryForward: false,
+    maxCarryForwardDays: 0,
+    isActive: true,
+    applicableGender: null,
+    isHalfDayAllowed: true,
+    isPaidLeave: true,
+  },
+  {
+    name: "Maternity Leave",
+    description: "Leave for female employees before and after childbirth",
+    defaultDays: 90,
+    isCarryForward: false,
+    maxCarryForwardDays: 0,
+    isActive: true,
+    applicableGender: "female",
+    isHalfDayAllowed: false,
+    isPaidLeave: true,
+  },
+  {
+    name: "Paternity Leave",
+    description: "Leave for male employees after the birth of their child",
+    defaultDays: 10,
+    isCarryForward: false,
+    maxCarryForwardDays: 0,
+    isActive: true,
+    applicableGender: "male",
+    isHalfDayAllowed: false,
+    isPaidLeave: true,
+  },
+  {
+    name: "Bereavement Leave",
+    description: "Leave due to the death of a family member",
+    defaultDays: 5,
+    isCarryForward: false,
+    maxCarryForwardDays: 0,
+    isActive: true,
+    applicableGender: null,
+    isHalfDayAllowed: false,
+    isPaidLeave: true,
+  },
+  {
+    name: "Unpaid Leave",
+    description: "Leave without pay for personal reasons",
+    defaultDays: 30,
+    isCarryForward: false,
+    maxCarryForwardDays: 0,
+    isActive: true,
+    applicableGender: null,
+    isHalfDayAllowed: true,
+    isPaidLeave: false,
+  },
+  {
+    name: "Work From Home",
+    description: "Working remotely from home",
+    defaultDays: 15,
+    isCarryForward: false,
+    maxCarryForwardDays: 0,
+    isActive: true,
+    applicableGender: null,
+    isHalfDayAllowed: true,
+    isPaidLeave: true,
+  },
+  {
+    name: "Compensatory Off",
+    description: "Leave granted for working on holidays or weekends",
+    defaultDays: 0,
+    isCarryForward: true,
+    maxCarryForwardDays: 5,
+    isActive: true,
+    applicableGender: null,
+    isHalfDayAllowed: true,
+    isPaidLeave: true,
+  },
+];
 
 const LeaveTypesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(false);
+  const [showDefaultTypes, setShowDefaultTypes] = useState(false);
+  const queryClient = useQueryClient();
 
   // Fetch leave types
   const { data, refetch } = useQuery({
@@ -29,6 +126,70 @@ const LeaveTypesPage: React.FC = () => {
       }),
     onError: (err: any) => setError(getErrorMessage(err)),
   });
+
+  // Check if we should show default leave types - only when there are no leave types at all
+  useEffect(() => {
+    if (data?.leaveTypes && data.leaveTypes.length === 0) {
+      setShowDefaultTypes(true);
+    } else {
+      setShowDefaultTypes(false);
+    }
+  }, [data]);
+
+  // Track which default types have been created
+  const [createdTypes, setCreatedTypes] = useState<Record<string, boolean>>({});
+
+  // Check if any leave types match the default types
+  useEffect(() => {
+    if (data?.leaveTypes && data.leaveTypes.length > 0) {
+      const newCreatedTypes: Record<string, boolean> = {};
+
+      // Check each default leave type against existing leave types
+      defaultLeaveTypes.forEach((defaultType) => {
+        const exists = data.leaveTypes.some(
+          (existingType: LeaveType) => existingType.name === defaultType.name
+        );
+        if (exists) {
+          newCreatedTypes[defaultType.name] = true;
+        }
+      });
+
+      setCreatedTypes((prev) => ({ ...prev, ...newCreatedTypes }));
+    }
+  }, [data]);
+
+  // Create leave type mutation
+  const createLeaveTypeMutation = useMutation({
+    mutationFn: createLeaveType,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leaveTypes"] });
+      refetch();
+    },
+    onError: (err: any) => {
+      setError(getErrorMessage(err));
+    },
+  });
+
+  // Handle creating a default leave type
+  const handleCreateDefaultLeaveType = async (leaveTypeData: any) => {
+    try {
+      setIsLoading(true);
+      await createLeaveTypeMutation.mutateAsync(leaveTypeData);
+
+      // Mark this type as created
+      setCreatedTypes((prev) => ({
+        ...prev,
+        [leaveTypeData.name]: true,
+      }));
+
+      setSuccessMessage(`${leaveTypeData.name} created successfully`);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      // Error is handled by the mutation
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle activate/deactivate leave type
   const handleToggleStatus = async (id: string, isActive: boolean) => {
@@ -154,11 +315,19 @@ const LeaveTypesPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex space-x-2">
-                  <Link to={`/leave-types/${leaveType.id}`}>
-                    <Button variant="secondary" size="sm">
-                      Edit
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      console.log(
+                        "Edit button clicked for leave type:",
+                        leaveType.id
+                      );
+                      window.location.href = `/leave-types/edit/${leaveType.id}`;
+                    }}
+                  >
+                    Edit
+                  </Button>
                   <Button
                     variant={leaveType.isActive ? "danger" : "success"}
                     size="sm"
@@ -174,11 +343,105 @@ const LeaveTypesPage: React.FC = () => {
             </Card>
           ))
         ) : (
-          <Card>
-            <p className="text-center text-gray-500 py-8">
-              No leave types found matching the selected filters.
-            </p>
-          </Card>
+          <div>
+            {showDefaultTypes ? (
+              <div className="space-y-6">
+                <Card>
+                  <div className="p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-700">
+                    <h3 className="text-lg font-medium mb-2">
+                      First Time Setup
+                    </h3>
+                    <p className="mb-4">
+                      It looks like you don't have any leave types set up yet.
+                      You can create the default leave types below or create
+                      your own custom leave types.
+                    </p>
+                  </div>
+                </Card>
+
+                {defaultLeaveTypes.map((leaveType, index) => (
+                  <Card key={index}>
+                    <div className="flex flex-wrap justify-between items-start gap-4">
+                      <div>
+                        <div className="flex items-center">
+                          <h3 className="text-lg font-medium text-gray-900 mr-2">
+                            {leaveType.name}
+                          </h3>
+                          <Badge variant="success">Default</Badge>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {leaveType.description}
+                        </p>
+                        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
+                          <div className="text-sm text-gray-500">
+                            <span className="font-medium">Default Days:</span>{" "}
+                            {leaveType.defaultDays}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            <span className="font-medium">Carry Forward:</span>{" "}
+                            {leaveType.isCarryForward ? "Yes" : "No"}
+                          </div>
+                          {leaveType.isCarryForward && (
+                            <div className="text-sm text-gray-500">
+                              <span className="font-medium">
+                                Max Carry Forward:
+                              </span>{" "}
+                              {leaveType.maxCarryForwardDays || "N/A"}
+                            </div>
+                          )}
+                          <div className="text-sm text-gray-500">
+                            <span className="font-medium">
+                              Half Day Allowed:
+                            </span>{" "}
+                            {leaveType.isHalfDayAllowed ? "Yes" : "No"}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            <span className="font-medium">Paid Leave:</span>{" "}
+                            {leaveType.isPaidLeave ? "Yes" : "No"}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            <span className="font-medium">
+                              Gender Specific:
+                            </span>{" "}
+                            {leaveType.applicableGender || "All"}
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        {!createdTypes[leaveType.name] ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() =>
+                              handleCreateDefaultLeaveType(leaveType)
+                            }
+                            disabled={
+                              isLoading || createLeaveTypeMutation.isPending
+                            }
+                          >
+                            Create
+                          </Button>
+                        ) : (
+                          <Badge
+                            variant="success"
+                            className="px-3 py-1 text-sm"
+                          >
+                            Created
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <p className="text-center text-gray-500 py-8">
+                  No leave types found matching the selected filters.
+                </p>
+              </Card>
+            )}
+          </div>
         )}
       </div>
     </div>

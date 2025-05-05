@@ -206,6 +206,7 @@ const router = createBrowserRouter([
       {
         path: "/leave-types/edit/:id",
         element: <EditLeaveTypePage />,
+        key: "edit-leave-type", // Add a unique key to ensure the route is properly recognized
       },
       {
         path: "/leave-types/config",

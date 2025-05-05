@@ -5,6 +5,7 @@ import {
   getMyLeaveRequests,
 } from "../../services/leaveRequestService";
 import { getAllUsers } from "../../services/userService";
+import { getHolidays } from "../../services/holidayService";
 import { LeaveRequest, User } from "../../types";
 import Card from "../../components/ui/Card";
 import Alert from "../../components/ui/Alert";
@@ -28,6 +29,7 @@ const leaveTypeColors: Record<string, string> = {
   "Paternity Leave": "bg-indigo-100 border-indigo-300 text-indigo-800",
   "Bereavement Leave": "bg-gray-100 border-gray-300 text-gray-800",
   "Unpaid Leave": "bg-orange-100 border-orange-300 text-orange-800",
+  Holiday: "bg-teal-100 border-teal-300 text-teal-800",
   default: "bg-green-100 border-green-300 text-green-800",
 };
 
@@ -65,6 +67,13 @@ const LeaveCalendarPage: React.FC = () => {
         setError(err.message || "Failed to load leave requests"),
     });
 
+  // Fetch holidays for 2025
+  const { data: holidaysData, isLoading: isHolidaysLoading } = useQuery({
+    queryKey: ["holidays", 2025],
+    queryFn: () => getHolidays({ year: 2025 }),
+    onError: (err: any) => setError(err.message || "Failed to load holidays"),
+  });
+
   // Fetch all users for filtering
   const { data: users, isLoading: isUsersLoading } = useQuery({
     queryKey: ["allUsers"],
@@ -72,7 +81,8 @@ const LeaveCalendarPage: React.FC = () => {
     onError: (err: any) => setError(err.message || "Failed to load users"),
   });
 
-  const isLoading = isLeaveRequestsLoading || isUsersLoading;
+  const isLoading =
+    isLeaveRequestsLoading || isUsersLoading || isHolidaysLoading;
 
   // Get all departments from users data for filtering
   const departments = users
@@ -164,11 +174,40 @@ const LeaveCalendarPage: React.FC = () => {
   // Get leave requests for a specific day
   const getLeavesForDay = (date: Date) => {
     const dateStr = formatDate(date);
-    return filteredLeaveRequests.filter((leave) => {
+
+    // Get leave requests for this day
+    const leaveRequests = filteredLeaveRequests.filter((leave) => {
       const startDate = formatDate(new Date(leave.startDate));
       const endDate = formatDate(new Date(leave.endDate));
       return dateStr >= startDate && dateStr <= endDate;
     });
+
+    // Check if there's a holiday on this day
+    const holidays = holidaysData?.holidays || [];
+    const holidaysOnThisDay = holidays.filter((holiday: any) => {
+      const holidayDate = formatDate(new Date(holiday.date));
+      return dateStr === holidayDate;
+    });
+
+    // Add holidays as special "leave requests"
+    const holidayLeaves = holidaysOnThisDay.map((holiday: any) => ({
+      id: `holiday-${holiday.id}`,
+      userId: "holiday",
+      startDate: holiday.date,
+      endDate: holiday.date,
+      status: "approved",
+      leaveType: {
+        name: `Holiday: ${holiday.name}`,
+        id: "holiday",
+      },
+      user: {
+        firstName: "Company",
+        lastName: "Holiday",
+      },
+      isHoliday: true,
+    }));
+
+    return [...leaveRequests, ...holidayLeaves];
   };
 
   // Handle case where no leave requests are found
@@ -230,6 +269,10 @@ const LeaveCalendarPage: React.FC = () => {
 
   // Get color for leave type
   const getLeaveTypeColor = (leaveTypeName: string) => {
+    // Check if it's a holiday
+    if (leaveTypeName.startsWith("Holiday:")) {
+      return leaveTypeColors["Holiday"];
+    }
     return leaveTypeColors[leaveTypeName] || leaveTypeColors.default;
   };
 

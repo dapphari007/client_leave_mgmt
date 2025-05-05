@@ -57,12 +57,18 @@ const UsersPage: React.FC = () => {
   // Helper function to render role badge
   const renderRoleBadge = (role: string) => {
     switch (role) {
+      case "super_admin":
+        return <Badge variant="primary">Super Admin</Badge>;
       case "admin":
         return <Badge variant="primary">Admin</Badge>;
       case "manager":
         return <Badge variant="info">Manager</Badge>;
+      case "team_lead":
+        return <Badge variant="success">Team Lead</Badge>;
       case "employee":
         return <Badge variant="default">Employee</Badge>;
+      case "hr":
+        return <Badge variant="warning">HR</Badge>;
       default:
         return <Badge>{role}</Badge>;
     }
@@ -111,9 +117,12 @@ const UsersPage: React.FC = () => {
               onChange={(e) => setSelectedRole(e.target.value)}
             >
               <option value="all">All Roles</option>
+              <option value="super_admin">Super Admin</option>
               <option value="admin">Admin</option>
               <option value="manager">Manager</option>
+              <option value="team_lead">Team Lead</option>
               <option value="employee">Employee</option>
+              <option value="hr">HR</option>
             </select>
           </div>
           <div className="w-full sm:w-auto">
@@ -168,15 +177,23 @@ const UsersPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="mt-2 sm:flex sm:justify-between">
-                    <div className="sm:flex">
+                    <div className="sm:flex space-x-4">
                       <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                         <span className="mr-1 font-medium">Phone:</span>
                         {user.phoneNumber || "N/A"}
                       </div>
+                      <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                        <span className="mr-1 font-medium">Department:</span>
+                        {user.department || "N/A"}
+                      </div>
+                      <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                        <span className="mr-1 font-medium">Position:</span>
+                        {user.position || "N/A"}
+                      </div>
                     </div>
-                    <div className="mt-2 flex items-center text-sm sm:mt-0">
+                    <div className="mt-2 flex items-center text-sm sm:mt-0 space-x-2">
                       <Link to={`/users/edit/${user.id}`}>
-                        <Button variant="secondary" size="sm" className="mr-2">
+                        <Button variant="secondary" size="sm">
                           Edit
                         </Button>
                       </Link>
