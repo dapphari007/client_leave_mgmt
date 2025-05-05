@@ -1,17 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getAllLeaveBalances,
   updateLeaveBalance,
+  bulkCreateLeaveBalances,
+  checkLeaveTypeBalances,
+  createAllLeaveBalancesForAllUsers,
 } from "../../services/leaveBalanceService";
 import { getAllLeaveTypes } from "../../services/leaveTypeService";
 import { getAllUsers } from "../../services/userService";
+import Button from "../../components/ui/Button";
+import Alert from "../../components/ui/Alert";
 
 export default function LeaveBalancesPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedBalance, setSelectedBalance] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [currentYear] = useState(2025);
+  const [isProcessingBulkCreate, setIsProcessingBulkCreate] = useState(false);
+  const [leaveTypesWithBalances, setLeaveTypesWithBalances] = useState<
+    Record<string, boolean>
+  >({});
 
   // Form state for editing
   const [editFormData, setEditFormData] = useState({
@@ -36,6 +46,67 @@ export default function LeaveBalancesPage() {
     queryKey: ["users"],
     queryFn: getAllUsers,
   });
+
+  // Check which leave types already have balances for the current year
+  useEffect(() => {
+    const checkBalances = async () => {
+      if (leaveTypes && leaveTypes.length > 0) {
+        const balanceStatus: Record<string, boolean> = {};
+
+        for (const leaveType of leaveTypes) {
+          try {
+            const result = await checkLeaveTypeBalances(
+              leaveType.id,
+              currentYear
+            );
+            balanceStatus[leaveType.id] = result.exists && result.count > 0;
+          } catch (err) {
+            console.error(
+              `Error checking balances for ${leaveType.name}:`,
+              err
+            );
+            balanceStatus[leaveType.id] = false;
+          }
+        }
+
+        setLeaveTypesWithBalances(balanceStatus);
+      }
+    };
+
+    checkBalances();
+  }, [leaveTypes, currentYear]);
+
+  // Bulk create all leave balances for all leave types
+  const bulkCreateAllBalancesMutation = useMutation({
+    mutationFn: createAllLeaveBalancesForAllUsers,
+    onSuccess: (result) => {
+      // Update all leave types to show they have balances
+      if (leaveTypes) {
+        const allBalances: Record<string, boolean> = {};
+        leaveTypes.forEach((leaveType: any) => {
+          allBalances[leaveType.id] = true;
+        });
+        setLeaveTypesWithBalances((prev) => ({ ...prev, ...allBalances }));
+      }
+
+      const message = `Successfully created ${result.created} leave balances for ${result.users} users across ${result.leaveTypes} leave types for year ${currentYear}`;
+      setSuccess(message);
+      setTimeout(() => setSuccess(null), 3000);
+      setIsProcessingBulkCreate(false);
+    },
+    onError: (err: any) => {
+      setError(
+        err.response?.data?.message || "Failed to create leave balances"
+      );
+      setIsProcessingBulkCreate(false);
+    },
+  });
+
+  // Handle bulk creating leave balances for all leave types
+  const handleBulkCreateAllBalances = () => {
+    setIsProcessingBulkCreate(true);
+    bulkCreateAllBalancesMutation.mutate();
+  };
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => updateLeaveBalance(data.id, data),
@@ -91,30 +162,37 @@ export default function LeaveBalancesPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Leave Balances</h1>
+        <div className="flex space-x-2">
+          {Object.values(leaveTypesWithBalances).some((exists) => !exists) && (
+            <Button
+              variant="success"
+              onClick={handleBulkCreateAllBalances}
+              disabled={isProcessingBulkCreate}
+            >
+              {isProcessingBulkCreate
+                ? "Creating Balances..."
+                : "Bulk Create All Balances"}
+            </Button>
+          )}
+        </div>
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-          <button
-            className="float-right font-bold"
-            onClick={() => setError(null)}
-          >
-            &times;
-          </button>
-        </div>
+        <Alert
+          variant="error"
+          message={error}
+          onClose={() => setError(null)}
+          className="mb-6"
+        />
       )}
 
       {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-          {success}
-          <button
-            className="float-right font-bold"
-            onClick={() => setSuccess(null)}
-          >
-            &times;
-          </button>
-        </div>
+        <Alert
+          variant="success"
+          message={success}
+          onClose={() => setSuccess(null)}
+          className="mb-6"
+        />
       )}
 
       <div className="overflow-x-auto">

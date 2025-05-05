@@ -92,12 +92,28 @@ export const deleteLeaveBalance = async (id: string): Promise<void> => {
 
 export const bulkCreateLeaveBalances = async (
   data: BulkCreateLeaveBalanceData
-): Promise<LeaveBalance[]> => {
-  const response = await post<{ leaveBalances: LeaveBalance[] }>(
-    "/leave-balances/bulk-create",
-    data
+): Promise<{
+  leaveBalances: LeaveBalance[];
+  created: number;
+  skipped: number;
+}> => {
+  const response = await post<{
+    leaveBalances: LeaveBalance[];
+    created: number;
+    skipped: number;
+  }>("/leave-balances/bulk-create", data);
+  return response;
+};
+
+export const checkLeaveTypeBalances = async (
+  leaveTypeId: string,
+  year: number
+): Promise<{ exists: boolean; count: number }> => {
+  const response = await get<{ exists: boolean; count: number }>(
+    `/leave-balances/check-type/${leaveTypeId}`,
+    { params: { year } }
   );
-  return response.leaveBalances || [];
+  return response;
 };
 
 export const createAllLeaveBalancesForAllUsers = async (): Promise<{

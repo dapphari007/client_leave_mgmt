@@ -7,6 +7,8 @@ import {
   updateUser,
   resetUserPassword,
 } from "../../services/userService";
+import { getAllDepartments } from "../../services/departmentService";
+import { getAllPositions } from "../../services/positionService";
 import { useUsers } from "../../hooks";
 import ResetPasswordModal from "../../components/users/ResetPasswordModal";
 
@@ -45,6 +47,18 @@ export default function EditUserPage() {
 
   const { data } = useUsers();
   const users = data?.users || [];
+
+  // Fetch departments
+  const { data: departmentsData } = useQuery({
+    queryKey: ["departments"],
+    queryFn: () => getAllDepartments({}),
+  });
+
+  // Fetch positions
+  const { data: positionsData } = useQuery({
+    queryKey: ["positions"],
+    queryFn: () => getAllPositions({}),
+  });
 
   const {
     register,
@@ -95,13 +109,17 @@ export default function EditUserPage() {
   const onSubmit = (data: FormValues) => {
     // Only include managerId if role is employee or team_lead
     const userData = {
-      ...data,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      role: data.role,
+      department: data.department,
+      position: data.position,
+      isActive: data.isActive,
       managerId:
         data.role === "employee" || data.role === "team_lead"
           ? data.managerId
           : undefined,
-      department: data.department,
-      position: data.position,
     };
 
     updateMutation.mutate(userData);
@@ -258,11 +276,21 @@ export default function EditUserPage() {
             <label className="block text-gray-700 text-sm font-bold mb-2">
               Department
             </label>
-            <input
+            <select
               {...register("department")}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              type="text"
-            />
+            >
+              <option value="">No Department</option>
+              {departmentsData?.map((dept: any) => (
+                <option
+                  key={dept.id}
+                  value={dept.id}
+                  selected={user?.department === dept.id}
+                >
+                  {dept.name}
+                </option>
+              ))}
+            </select>
             {errors.department && (
               <p className="text-red-500 text-xs italic">
                 {errors.department.message}
@@ -274,11 +302,21 @@ export default function EditUserPage() {
             <label className="block text-gray-700 text-sm font-bold mb-2">
               Position
             </label>
-            <input
+            <select
               {...register("position")}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              type="text"
-            />
+            >
+              <option value="">No Position</option>
+              {positionsData?.map((pos: any) => (
+                <option
+                  key={pos.id}
+                  value={pos.id}
+                  selected={user?.position === pos.id}
+                >
+                  {pos.name}
+                </option>
+              ))}
+            </select>
             {errors.position && (
               <p className="text-red-500 text-xs italic">
                 {errors.position.message}

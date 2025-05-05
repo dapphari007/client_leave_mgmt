@@ -8,6 +8,11 @@ import {
   deactivateLeaveType,
   createLeaveType,
 } from "../../services/leaveTypeService";
+import {
+  bulkCreateLeaveBalances,
+  checkLeaveTypeBalances,
+  createAllLeaveBalancesForAllUsers,
+} from "../../services/leaveBalanceService";
 import { LeaveType } from "../../types";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
@@ -114,7 +119,33 @@ const LeaveTypesPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(false);
   const [showDefaultTypes, setShowDefaultTypes] = useState(false);
+  // Set the year to 2025 specifically as requested
+  const [currentYear] = useState(2025);
+  const [processingBalanceForType, setProcessingBalanceForType] = useState<
+    string | null
+  >(null);
+  const [isProcessingBulkCreate, setIsProcessingBulkCreate] = useState(false);
+  const [leaveTypesWithBalances, setLeaveTypesWithBalances] = useState<
+    Record<string, boolean>
+  >({});
+  const [isDatabaseFlushed, setIsDatabaseFlushed] = useState(false);
   const queryClient = useQueryClient();
+
+  // Check if database is flushed
+  useEffect(() => {
+    const checkDatabaseFlushed = async () => {
+      try {
+        const response = await axios.get(
+          `${config.apiUrl}/api/leave-balances/check-flushed`
+        );
+        setIsDatabaseFlushed(response.data.isFlushed);
+      } catch (err) {
+        console.error("Error checking database flush status:", err);
+        setIsDatabaseFlushed(false);
+      }
+    };
+    checkDatabaseFlushed();
+  }, []);
 
   // Fetch leave types
   const { data, refetch } = useQuery({
@@ -126,6 +157,35 @@ const LeaveTypesPage: React.FC = () => {
       }),
     onError: (err: any) => setError(getErrorMessage(err)),
   });
+
+  // Check which leave types already have balances for the current year
+  useEffect(() => {
+    const checkBalances = async () => {
+      if (data?.leaveTypes && data.leaveTypes.length > 0) {
+        const balanceStatus: Record<string, boolean> = {};
+
+        for (const leaveType of data.leaveTypes) {
+          try {
+            const result = await checkLeaveTypeBalances(
+              leaveType.id,
+              currentYear
+            );
+            balanceStatus[leaveType.id] = result.exists && result.count > 0;
+          } catch (err) {
+            console.error(
+              `Error checking balances for ${leaveType.name}:`,
+              err
+            );
+            balanceStatus[leaveType.id] = false;
+          }
+        }
+
+        setLeaveTypesWithBalances(balanceStatus);
+      }
+    };
+
+    checkBalances();
+  }, [data?.leaveTypes, currentYear]);
 
   // Check if we should show default leave types - only when there are no leave types at all
   useEffect(() => {
@@ -169,6 +229,71 @@ const LeaveTypesPage: React.FC = () => {
       setError(getErrorMessage(err));
     },
   });
+
+  // Create leave balances mutation
+  const createLeaveBalancesMutation = useMutation({
+    mutationFn: bulkCreateLeaveBalances,
+    onSuccess: (result, variables) => {
+      // Update the state to show this leave type now has balances
+      setLeaveTypesWithBalances((prev) => ({
+        ...prev,
+        [variables.leaveTypeId]: true,
+      }));
+
+      const message =
+        result.created > 0
+          ? `Leave balances created successfully for ${result.created} users for year ${currentYear}`
+          : `No new balances needed to be created (${result.skipped} already existed)`;
+
+      setSuccessMessage(message);
+      setTimeout(() => setSuccessMessage(null), 3000);
+      setProcessingBalanceForType(null);
+    },
+    onError: (err: any) => {
+      setError(getErrorMessage(err));
+      setProcessingBalanceForType(null);
+    },
+  });
+
+  // Bulk create all leave balances for all leave types
+  const bulkCreateAllBalancesMutation = useMutation({
+    mutationFn: createAllLeaveBalancesForAllUsers,
+    onSuccess: (result) => {
+      // Update all leave types to show they have balances
+      if (data?.leaveTypes) {
+        const allBalances: Record<string, boolean> = {};
+        data.leaveTypes.forEach((leaveType: LeaveType) => {
+          allBalances[leaveType.id] = true;
+        });
+        setLeaveTypesWithBalances((prev) => ({ ...prev, ...allBalances }));
+      }
+
+      const message = `Successfully created ${result.created} leave balances for ${result.users} users across ${result.leaveTypes} leave types for year ${currentYear}`;
+      setSuccessMessage(message);
+      setTimeout(() => setSuccessMessage(null), 3000);
+      setIsProcessingBulkCreate(false);
+    },
+    onError: (err: any) => {
+      setError(getErrorMessage(err));
+      setIsProcessingBulkCreate(false);
+    },
+  });
+
+  // Handle creating leave balances for a leave type
+  const handleCreateLeaveBalances = (leaveType: LeaveType) => {
+    setProcessingBalanceForType(leaveType.id);
+    createLeaveBalancesMutation.mutate({
+      leaveTypeId: leaveType.id,
+      totalDays: leaveType.defaultDays,
+      year: currentYear,
+    });
+  };
+
+  // Handle bulk creating leave balances for all leave types
+  const handleBulkCreateAllBalances = () => {
+    setIsProcessingBulkCreate(true);
+    bulkCreateAllBalancesMutation.mutate();
+  };
 
   // Handle creating a default leave type
   const handleCreateDefaultLeaveType = async (leaveTypeData: any) => {
@@ -334,10 +459,27 @@ const LeaveTypesPage: React.FC = () => {
                     onClick={() =>
                       handleToggleStatus(leaveType.id, leaveType.isActive)
                     }
-                    disabled={isLoading}
+                    disabled={
+                      isLoading || processingBalanceForType === leaveType.id
+                    }
                   >
                     {leaveType.isActive ? "Deactivate" : "Activate"}
                   </Button>
+                  {!leaveTypesWithBalances[leaveType.id] &&
+                    isDatabaseFlushed && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleCreateLeaveBalances(leaveType)}
+                        disabled={
+                          isLoading || processingBalanceForType === leaveType.id
+                        }
+                      >
+                        {processingBalanceForType === leaveType.id
+                          ? "Creating..."
+                          : "Create Balances"}
+                      </Button>
+                    )}
                 </div>
               </div>
             </Card>

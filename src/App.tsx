@@ -46,6 +46,9 @@ import ApprovalWorkflowsPage from "./pages/admin/ApprovalWorkflowsPage";
 import CreateApprovalWorkflowPage from "./pages/admin/CreateApprovalWorkflowPage";
 import EditApprovalWorkflowPage from "./pages/admin/EditApprovalWorkflowPage";
 import SuperAdminDashboardPage from "./pages/admin/SuperAdminDashboardPage";
+import RolesPage from "./pages/admin/RolesPage";
+import DepartmentsPage from "./pages/admin/DepartmentsPage";
+import PositionsPage from "./pages/admin/PositionsPage";
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -206,7 +209,7 @@ const router = createBrowserRouter([
       {
         path: "/leave-types/edit/:id",
         element: <EditLeaveTypePage />,
-        key: "edit-leave-type", // Add a unique key to ensure the route is properly recognized
+        key: "edit-leave-type",
       },
       {
         path: "/leave-types/config",
@@ -239,6 +242,18 @@ const router = createBrowserRouter([
       {
         path: "/approval-workflows/edit/:id",
         element: <EditApprovalWorkflowPage />,
+      },
+      {
+        path: "/roles",
+        element: <RolesPage />,
+      },
+      {
+        path: "/departments",
+        element: <DepartmentsPage />,
+      },
+      {
+        path: "/positions",
+        element: <PositionsPage />,
       },
     ],
   },

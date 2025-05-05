@@ -341,13 +341,14 @@ const LeaveBalancesSection: React.FC = () => {
                     </td>
                     <td className="py-3 px-4">{balance.leaveType?.name}</td>
                     <td className="py-3 px-4">
-                      {balance.balance + (balance.carryForward || 0)}
+                      {Number(balance.balance || 0) +
+                        Number(balance.carryForward || 0)}
                     </td>
-                    <td className="py-3 px-4">{balance.used}</td>
+                    <td className="py-3 px-4">{Number(balance.used || 0)}</td>
                     <td className="py-3 px-4">
-                      {balance.balance +
-                        (balance.carryForward || 0) -
-                        balance.used}
+                      {Number(balance.balance || 0) +
+                        Number(balance.carryForward || 0) -
+                        Number(balance.used || 0)}
                     </td>
                   </tr>
                 ))

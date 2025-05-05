@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { createLeaveType } from "../../services/leaveTypeService";
+import {
+  bulkCreateLeaveBalances,
+  createAllLeaveBalancesForAllUsers,
+} from "../../services/leaveBalanceService";
 import { CreateLeaveTypeData } from "../../types";
 import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
@@ -27,6 +31,8 @@ const CreateLeaveTypePage: React.FC = () => {
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [createBalances, setCreateBalances] = useState(false);
+  const [currentYear] = useState(new Date().getFullYear());
   const navigate = useNavigate();
 
   const isCarryForward = watch("isCarryForward");
@@ -37,9 +43,30 @@ const CreateLeaveTypePage: React.FC = () => {
     setError(null);
 
     try {
-      await createLeaveType(data);
+      // Create the leave type first
+      const response = await createLeaveType(data);
+      const leaveTypeId = response.leaveType.id;
+
+      // If user opted to create balances, create them for all users
+      if (createBalances && leaveTypeId) {
+        try {
+          await bulkCreateLeaveBalances({
+            leaveTypeId,
+            totalDays: data.defaultDays,
+            year: currentYear,
+          });
+        } catch (balanceErr) {
+          console.error("Failed to create leave balances:", balanceErr);
+          // Continue even if balance creation fails
+        }
+      }
+
       navigate("/leave-types", {
-        state: { message: "Leave type created successfully" },
+        state: {
+          message: createBalances
+            ? "Leave type created successfully with balances for all users"
+            : "Leave type created successfully",
+        },
       });
     } catch (err) {
       setError(getErrorMessage(err));
@@ -198,6 +225,30 @@ const CreateLeaveTypePage: React.FC = () => {
                 Active
               </label>
             </div>
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-center">
+              <input
+                id="createBalances"
+                type="checkbox"
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                checked={createBalances}
+                onChange={(e) => setCreateBalances(e.target.checked)}
+              />
+              <label
+                htmlFor="createBalances"
+                className="ml-2 block text-sm text-gray-900"
+              >
+                Create leave balances for all users (for year {currentYear})
+              </label>
+            </div>
+            {createBalances && (
+              <p className="text-sm text-gray-500 mt-2 ml-6">
+                This will create leave balances with {watch("defaultDays")} days
+                for all active users.
+              </p>
+            )}
           </div>
 
           <div className="flex justify-end space-x-4">

@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateLeaveType } from "../../services/leaveTypeService";
+import {
+  bulkCreateLeaveBalances,
+  checkLeaveTypeBalances,
+} from "../../services/leaveBalanceService";
 import { useLeaveType } from "../../hooks";
 
 type FormValues = {
@@ -20,17 +24,31 @@ type FormValues = {
 export default function EditLeaveTypePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
-  
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // Set the year to 2025 specifically as requested
+  const [currentYear] = useState(2025);
+  const [isCreatingBalances, setIsCreatingBalances] = useState(false);
+
   console.log("EditLeaveTypePage - ID param:", id);
 
   const { data, isLoading: isLoadingLeaveType, isError } = useLeaveType(id);
   console.log("EditLeaveTypePage - Data from useLeaveType:", data);
-  
+
   // Extract the leave type from the response
   const leaveType = data?.leaveType;
   console.log("EditLeaveTypePage - Leave type:", leaveType);
-  
+
+  // Check if balances already exist for this leave type
+  const { data: balanceData, isLoading: isCheckingBalances } = useQuery({
+    queryKey: ["leaveTypeBalances", id, currentYear],
+    queryFn: () => checkLeaveTypeBalances(id as string, currentYear),
+    enabled: !!id && !!leaveType,
+  });
+
+  const balancesExist = balanceData?.exists && balanceData?.count > 0;
+
   // If there's an error fetching the leave type, show an error message
   useEffect(() => {
     if (isError) {
@@ -84,6 +102,36 @@ export default function EditLeaveTypePage() {
     },
   });
 
+  // Create leave balances mutation
+  const createLeaveBalancesMutation = useMutation({
+    mutationFn: bulkCreateLeaveBalances,
+    onSuccess: () => {
+      setSuccessMessage(
+        `Leave balances created successfully for all users for year ${currentYear}`
+      );
+      setTimeout(() => setSuccessMessage(null), 3000);
+      setIsCreatingBalances(false);
+    },
+    onError: (err: any) => {
+      setError(
+        err.response?.data?.message || "Failed to create leave balances"
+      );
+      setIsCreatingBalances(false);
+    },
+  });
+
+  // Handle creating leave balances
+  const handleCreateLeaveBalances = () => {
+    if (!leaveType) return;
+
+    setIsCreatingBalances(true);
+    createLeaveBalancesMutation.mutate({
+      leaveTypeId: id as string,
+      totalDays: leaveType.defaultDays,
+      year: currentYear,
+    });
+  };
+
   const onSubmit = (data: FormValues) => {
     updateMutation.mutate(data);
   };
@@ -119,6 +167,18 @@ export default function EditLeaveTypePage() {
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          {successMessage}
+          <button
+            className="float-right text-green-700 hover:text-green-900"
+            onClick={() => setSuccessMessage(null)}
+          >
+            &times;
+          </button>
         </div>
       )}
 
@@ -261,21 +321,36 @@ export default function EditLeaveTypePage() {
           </div>
         </div>
 
-        <div className="flex justify-end space-x-4">
-          <button
-            type="button"
-            onClick={() => navigate("/leave-types")}
-            className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-            disabled={updateMutation.isPending}
-          >
-            {updateMutation.isPending ? "Saving..." : "Save Changes"}
-          </button>
+        <div className="flex justify-between items-center">
+          {!balancesExist && (
+            <button
+              type="button"
+              onClick={handleCreateLeaveBalances}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
+              disabled={isCreatingBalances}
+            >
+              {isCreatingBalances
+                ? "Creating Balances..."
+                : "Create Leave Balances"}
+            </button>
+          )}
+
+          <div className="flex space-x-4">
+            <button
+              type="button"
+              onClick={() => navigate("/leave-types")}
+              className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
         </div>
       </form>
     </div>

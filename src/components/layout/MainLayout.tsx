@@ -10,6 +10,8 @@ import {
   CalendarDaysIcon,
   UserIcon,
   ArrowRightOnRectangleIcon,
+  BuildingOfficeIcon,
+  BriefcaseIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../context/AuthContext";
 
@@ -103,6 +105,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       href: "/approval-workflows",
       icon: UserGroupIcon,
     },
+    { name: "Roles", href: "/roles", icon: UserGroupIcon },
+    { name: "Departments", href: "/departments", icon: BuildingOfficeIcon },
+    { name: "Positions", href: "/positions", icon: BriefcaseIcon },
   ];
 
   const handleLogout = () => {
